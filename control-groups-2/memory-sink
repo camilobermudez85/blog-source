@@ -1,19 +1,16 @@
 #!/bin/bash
 
-set -x
-# Number of workers
-workers=2
-# Memory per worker
-memory_limit="2048M"
+memory_limit="512M"
 
-stress --quiet --vm 2 --vm-bytes ${memory_limit} --vm-keep &>/dev/null &
+stress --quiet --vm 4 --vm-bytes $memory_limit --vm-keep &>/dev/null &
 trap 'kill -9 $(pgrep -P '$!') &> /dev/null' EXIT
 while true; do
     total=0;
-    pgrep -P $!
     for p in $(pgrep -P $!); do
         rss=$(grep "^VmRSS" "/proc/$p/status" | awk '{print $2}');
+        process=$(ps -q ${p} -eo ppid,pid,cgroup | grep ${p} | awk -F , '{print $1}')
         total=$(($total + $rss));
+        echo "$process ==> $(($rss/1024))MB"
     done;
-    echo "$(($total/1000)) MB";
+    echo "Total ==> $(($total/1024))MB";
 done
