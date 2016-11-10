@@ -1,9 +1,17 @@
 #!/bin/bash
 
-memory_limit="512M"
+cgroup_path="/sys/fs/cgroup/memory/cgroup1"
+cgroup_memory_limit="256M"
+mkdir ${cgroup_path}
+pushd ${cgroup_path}
+echo "${cgroup_memory_limit}" > memory.limit_in_bytes
+echo $$ > tasks
+popd
 
-stress --quiet --vm 4 --vm-bytes $memory_limit --vm-keep &>/dev/null &
-trap 'kill -9 $(pgrep -P '$!') &> /dev/null' EXIT
+memory_limit="128M"
+
+stress --quiet --vm 4 --vm-bytes ${memory_limit} --vm-keep &>/dev/null &
+trap 'kill -9 $(pgrep -P '$!') &> /dev/null; cgdelete memory:/cgroup1' EXIT
 while true; do
     total=0;
     for p in $(pgrep -P $!); do
