@@ -1,0 +1,15 @@
+#!/bin/bash
+
+memory_limit="128M"
+
+stress --quiet --vm 4 --vm-bytes ${memory_limit} --vm-keep &>/dev/null &
+while true; do
+    total=0;
+    for p in $(pgrep -P $!); do
+        rss=$(grep "^VmRSS" "/proc/$p/status" | awk '{print $2}');
+        process=$(ps -q ${p} -eo ppid,pid | grep ${p})
+        total=$(($total + $rss));
+        echo "$process ==> $(($rss/1024))MB"
+    done;
+    echo "Total ==> $(($total/1024))MB";
+done
